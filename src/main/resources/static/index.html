@@ -1,138 +1,453 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full bg-[#eceef2]">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KEYSTONE | Field Service Management</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>KEYSTONE | Field Operations Command</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+        rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+    </style>
 </head>
 
-<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
-    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
-        <div>
-            <h1 class="text-2xl font-bold text-indigo-400 tracking-wide">KEYSTONE</h1>
-            <p class="text-xs text-slate-400">Meridian Facilities Management Platform</p>
+<body class="h-full bg-[#eceef2] text-zinc-800 flex flex-col antialiased selection:bg-zinc-800 selection:text-white">
+
+    <!-- ==================== AUTHENTICATION OVERLAY ==================== -->
+    <div id="authScreen"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-900/60 backdrop-blur-sm px-4">
+        <div class="w-full max-w-md bg-white border border-zinc-300/80 rounded-3xl p-7 shadow-2xl shadow-zinc-900/20">
+            <div class="flex items-center gap-3 mb-6">
+                <div
+                    class="h-10 w-10 rounded-xl bg-zinc-900 flex items-center justify-center font-extrabold text-white text-lg shadow-md">
+                    K</div>
+                <div>
+                    <h2 class="text-lg font-bold tracking-tight text-zinc-900">KEYSTONE Access</h2>
+                    <p class="text-xs text-zinc-500">Meridian Facility Operations</p>
+                </div>
+            </div>
+
+            <div class="mb-4 p-3 rounded-2xl bg-zinc-100 border border-zinc-200 text-[11px] text-zinc-600">
+                <span class="font-bold text-zinc-900">Select Role Persona:</span> Test permission guardrails across
+                client, technician, and dispatch identities.
+            </div>
+
+            <div class="grid grid-cols-2 gap-2.5 mb-6">
+                <button type="button"
+                    onclick="selectPersona('customer@nexus.com', 'Nexus Tower (Customer)', 'CUSTOMER')"
+                    class="text-left p-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 hover:border-zinc-400 hover:bg-white transition shadow-xs">
+                    <p class="text-xs font-bold text-zinc-900">Customer</p>
+                    <p class="text-[10px] text-zinc-500 mt-0.5">Raise & track requests</p>
+                </button>
+                <button type="button"
+                    onclick="selectPersona('dispatch@meridian.com', 'Priya S. (Dispatcher)', 'DISPATCHER')"
+                    class="text-left p-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 hover:border-zinc-400 hover:bg-white transition shadow-xs">
+                    <p class="text-xs font-bold text-zinc-900">Dispatcher</p>
+                    <p class="text-[10px] text-zinc-500 mt-0.5">Triage & assign engineers</p>
+                </button>
+                <button type="button"
+                    onclick="selectPersona('rahul.tech@meridian.com', 'Rahul K. (Field Tech)', 'TECHNICIAN')"
+                    class="text-left p-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 hover:border-zinc-400 hover:bg-white transition shadow-xs">
+                    <p class="text-xs font-bold text-zinc-900">Technician</p>
+                    <p class="text-[10px] text-zinc-500 mt-0.5">Execute & log parts</p>
+                </button>
+                <button type="button" onclick="selectPersona('admin@meridian.com', 'Director Ops (Manager)', 'MANAGER')"
+                    class="text-left p-3 rounded-2xl border border-zinc-200 bg-zinc-50/80 hover:border-zinc-400 hover:bg-white transition shadow-xs">
+                    <p class="text-xs font-bold text-zinc-900">Manager</p>
+                    <p class="text-[10px] text-zinc-500 mt-0.5">Audits & sign-off</p>
+                </button>
+            </div>
+
+            <form onsubmit="handleLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-600 mb-1">Corporate Email</label>
+                    <input id="loginEmail" type="email" required value="customer@nexus.com"
+                        class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 focus:outline-none focus:border-zinc-800 font-mono" />
+                </div>
+                <button type="submit"
+                    class="w-full py-2.5 bg-zinc-900 hover:bg-black text-white font-semibold rounded-xl text-xs transition shadow-md">
+                    Authenticate & Enter &rarr;
+                </button>
+            </form>
         </div>
+    </div>
+
+    <!-- ==================== HEADER ==================== -->
+    <header
+        class="border-b border-zinc-300/80 bg-white/80 backdrop-blur sticky top-0 z-40 px-6 py-3.5 flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="h-8 w-8 rounded-xl bg-zinc-900 flex items-center justify-center font-bold text-white text-sm">K
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-bold text-zinc-900 text-sm tracking-tight">KEYSTONE Platform</h1>
+                    <span id="roleTag"
+                        class="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-zinc-200 text-zinc-800 border border-zinc-300">CUSTOMER</span>
+                </div>
+                <p class="text-[11px] text-zinc-500">Meridian Facilities Management</p>
+            </div>
+        </div>
+
         <div class="flex items-center gap-3">
-            <span class="text-sm text-slate-300">Acting As:</span>
-            <select id="roleSelector"
-                class="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm font-semibold text-indigo-300">
-                <option value="Dispatcher">Dispatcher</option>
-                <option value="Technician">Technician</option>
-                <option value="Manager">Manager / Admin</option>
-                <option value="Customer">Customer</option>
-            </select>
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-zinc-100 border border-zinc-200 text-xs">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
+                <span id="userDisplayName" class="font-semibold text-zinc-800">Nexus Tower</span>
+            </div>
+
+            <button id="btnRaise" onclick="openCreateModal()"
+                class="px-3.5 py-1.5 bg-zinc-900 hover:bg-black text-white rounded-xl text-xs font-semibold shadow-sm transition">
+                + Raise Work Order
+            </button>
+
+            <button onclick="logout()"
+                class="px-3.5 py-1.5 border border-zinc-300 hover:bg-zinc-100 rounded-xl text-xs font-semibold text-zinc-700 transition">
+                Switch Role
+            </button>
         </div>
     </header>
 
-    <main class="p-6 max-w-7xl mx-auto space-y-6">
-        <div class="flex justify-between items-center">
-            <h2 class="text-xl font-semibold">Active Work Orders</h2>
-            <button onclick="openModal()"
-                class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium transition">
-                + Raise Work Order
-            </button>
+    <!-- ==================== SCOPE STATUS BANNER ==================== -->
+    <div class="max-w-7xl w-full mx-auto px-6 pt-5">
+        <div id="scopeNotice"
+            class="p-3.5 rounded-2xl bg-white border border-zinc-300/80 shadow-xs flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+                <span class="text-zinc-500 font-bold uppercase tracking-wider text-[10px]">Active Scope:</span>
+                <span id="scopeDesc" class="text-zinc-800 font-medium">...</span>
+            </div>
+            <span class="text-[10px] font-mono text-zinc-500 uppercase font-semibold">Zero-Trust Guardrails
+                Active</span>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="boardColumns"></div>
+    </div>
+
+    <!-- ==================== METRICS RIBBON ==================== -->
+    <section class="max-w-7xl w-full mx-auto px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="p-4 rounded-2xl bg-white border border-zinc-300/80 shadow-xs">
+            <p class="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Scoped Tickets</p>
+            <p id="statTotal" class="text-2xl font-bold mt-1 text-zinc-900 font-mono">0</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-white border border-zinc-300/80 shadow-xs">
+            <p class="text-[10px] uppercase font-bold text-amber-600 tracking-wider">Awaiting Dispatch</p>
+            <p id="statPending" class="text-2xl font-bold mt-1 text-amber-600 font-mono">0</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-white border border-zinc-300/80 shadow-xs">
+            <p class="text-[10px] uppercase font-bold text-zinc-700 tracking-wider">In Progress</p>
+            <p id="statActive" class="text-2xl font-bold mt-1 text-zinc-800 font-mono">0</p>
+        </div>
+        <div class="p-4 rounded-2xl bg-white border border-zinc-300/80 shadow-xs">
+            <p class="text-[10px] uppercase font-bold text-emerald-600 tracking-wider">Resolved</p>
+            <p id="statClosed" class="text-2xl font-bold mt-1 text-emerald-600 font-mono">0</p>
+        </div>
+    </section>
+
+    <!-- ==================== WORKFLOW KANBAN BOARD ==================== -->
+    <main class="max-w-7xl w-full mx-auto px-6 pb-20 flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
+        <!-- NEW -->
+        <div class="flex flex-col bg-zinc-200/60 border border-zinc-300 rounded-2xl p-3.5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-zinc-300">
+                <span class="text-xs font-bold text-zinc-700 uppercase tracking-wider">1. New Requests</span>
+                <span id="badge-NEW"
+                    class="text-[11px] font-mono px-2 py-0.5 rounded bg-white text-zinc-800 font-bold shadow-xs">0</span>
+            </div>
+            <div id="col-NEW" class="space-y-3 flex-1 overflow-y-auto min-h-[360px]"></div>
+        </div>
+
+        <!-- ASSIGNED -->
+        <div class="flex flex-col bg-zinc-200/60 border border-zinc-300 rounded-2xl p-3.5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-zinc-300">
+                <span class="text-xs font-bold text-zinc-700 uppercase tracking-wider">2. Dispatched</span>
+                <span id="badge-ASSIGNED"
+                    class="text-[11px] font-mono px-2 py-0.5 rounded bg-white text-zinc-800 font-bold shadow-xs">0</span>
+            </div>
+            <div id="col-ASSIGNED" class="space-y-3 flex-1 overflow-y-auto min-h-[360px]"></div>
+        </div>
+
+        <!-- IN PROGRESS -->
+        <div class="flex flex-col bg-zinc-200/60 border border-zinc-300 rounded-2xl p-3.5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-zinc-300">
+                <span class="text-xs font-bold text-zinc-700 uppercase tracking-wider">3. In Progress</span>
+                <span id="badge-IN_PROGRESS"
+                    class="text-[11px] font-mono px-2 py-0.5 rounded bg-white text-zinc-800 font-bold shadow-xs">0</span>
+            </div>
+            <div id="col-IN_PROGRESS" class="space-y-3 flex-1 overflow-y-auto min-h-[360px]"></div>
+        </div>
+
+        <!-- COMPLETED -->
+        <div class="flex flex-col bg-zinc-200/60 border border-zinc-300 rounded-2xl p-3.5">
+            <div class="flex items-center justify-between mb-3 pb-2 border-b border-zinc-300">
+                <span class="text-xs font-bold text-emerald-800 uppercase tracking-wider">4. Resolved</span>
+                <span id="badge-COMPLETED"
+                    class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold shadow-xs">0</span>
+            </div>
+            <div id="col-COMPLETED" class="space-y-3 flex-1 overflow-y-auto min-h-[360px]"></div>
+        </div>
     </main>
 
-    <div id="createModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4">
-        <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full space-y-4">
-            <h3 class="text-lg font-bold">New Service Request</h3>
-            <input type="text" id="woTitle" placeholder="Issue Description (e.g. HVAC breakdown)"
-                class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
-            <select id="woPriority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
-                <option value="LOW">Low</option>
-                <option value="MEDIUM" selected>Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-            </select>
-            <div class="flex justify-end gap-2">
-                <button onclick="closeModal()" class="px-3 py-1 text-sm text-slate-400">Cancel</button>
-                <button onclick="createOrder()"
-                    class="px-4 py-2 bg-indigo-600 rounded text-sm font-semibold">Submit</button>
+    <!-- ==================== CREATE MODAL ==================== -->
+    <div id="modalCreate"
+        class="fixed inset-0 z-50 bg-zinc-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="w-full max-w-md bg-white border border-zinc-300 rounded-3xl p-6 shadow-2xl">
+            <h3 class="text-sm font-bold text-zinc-900">Raise Service Ticket</h3>
+            <p class="text-xs text-zinc-500 mb-4">Register incident for automated dispatcher triage</p>
+
+            <form onsubmit="submitNewOrder(event)" class="space-y-3.5">
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-700 mb-1">Issue Description</label>
+                    <input id="inputTitle" required placeholder="e.g., Compressor vibration fault on Rooftop AHU-2"
+                        class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:outline-none focus:border-zinc-800" />
+                </div>
+                <div>
+                    <label class="block text-[11px] font-semibold text-zinc-700 mb-1">Severity & SLA Level</label>
+                    <select id="inputPriority"
+                        class="w-full bg-zinc-50 border border-zinc-300 rounded-xl px-3 py-2 text-xs text-zinc-900 focus:outline-none focus:border-zinc-800">
+                        <option value="CRITICAL">CRITICAL (4 Hours Resolution SLA)</option>
+                        <option value="HIGH" selected>HIGH (8 Hours Resolution SLA)</option>
+                        <option value="MEDIUM">MEDIUM (24 Hours Resolution SLA)</option>
+                        <option value="LOW">LOW (48 Hours Resolution SLA)</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeCreateModal()"
+                        class="px-3.5 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800">Cancel</button>
+                    <button type="submit"
+                        class="px-4 py-1.5 bg-zinc-900 hover:bg-black text-white font-semibold rounded-xl text-xs transition">Submit
+                        Ticket</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== PARTS & LABOR DRAWER ==================== -->
+    <div id="drawerTech"
+        class="fixed inset-0 z-50 bg-zinc-900/50 backdrop-blur-xs hidden flex items-center justify-end">
+        <div
+            class="w-full max-w-md bg-white border-l border-zinc-300 h-full p-6 flex flex-col shadow-2xl overflow-y-auto">
+            <div class="flex items-center justify-between pb-4 border-b border-zinc-200">
+                <div>
+                    <span id="drawerCode" class="font-mono text-xs text-zinc-500 font-bold">WO-101</span>
+                    <h3 id="drawerTitle" class="text-sm font-bold text-zinc-900 mt-0.5">Field Service Ledger</h3>
+                </div>
+                <button onclick="closeTechDrawer()"
+                    class="text-zinc-400 hover:text-zinc-800 text-lg font-bold">&times;</button>
+            </div>
+
+            <div class="mt-4 space-y-4 flex-1">
+                <div class="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200">
+                    <p class="text-xs font-semibold text-zinc-700 mb-2">Technician Labor Hours</p>
+                    <div class="flex items-center gap-2">
+                        <input id="laborHours" type="number" step="0.5" value="2.0"
+                            class="w-24 bg-white border border-zinc-300 rounded-lg px-3 py-1.5 text-xs text-zinc-900 text-center font-mono font-bold" />
+                        <span class="text-xs text-zinc-500">Billable repair hours</span>
+                    </div>
+                </div>
+
+                <div class="p-3.5 bg-zinc-50 rounded-2xl border border-zinc-200">
+                    <p class="text-xs font-semibold text-zinc-700 mb-2">Consumables & Inventory</p>
+                    <div class="space-y-2">
+                        <select id="partSelect"
+                            class="w-full bg-white border border-zinc-300 rounded-lg px-3 py-2 text-xs text-zinc-800">
+                            <option value="R410A Refrigerant Cyl (2kg)">R410A Refrigerant Cyl (2kg)</option>
+                            <option value="Heavy Duty Bando V-Belt B-58">Heavy Duty Bando V-Belt B-58</option>
+                            <option value="Square D 30A Thermal Breaker">Square D 30A Thermal Breaker</option>
+                        </select>
+                        <input id="partQty" type="number" value="1" min="1"
+                            class="w-20 bg-white border border-zinc-300 rounded-lg px-3 py-1.5 text-xs text-zinc-900 font-mono font-bold" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-zinc-200 flex justify-end gap-2">
+                <button onclick="closeTechDrawer()"
+                    class="px-3.5 py-1.5 text-xs font-semibold text-zinc-500 hover:text-zinc-800">Cancel</button>
+                <button onclick="commitTechCompletion()"
+                    class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 font-semibold rounded-xl text-xs text-white transition">Commit
+                    & Complete</button>
             </div>
         </div>
     </div>
 
     <script>
-        const statusColumns = ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'];
+        let activeUser = {
+            email: 'customer@nexus.com',
+            name: 'Nexus Tower (Customer)',
+            role: 'CUSTOMER'
+        };
+
+        let allOrders = [];
+        let selectedOrderId = null;
+
+        const SCOPE_INFO = {
+            CUSTOMER: "Tenant Scope: Raise incident tickets and track work order completion. Action transitions are restricted.",
+            DISPATCHER: "Central Dispatch Scope: Review backlog and assign qualified technicians.",
+            TECHNICIAN: "Field Engineer Scope: Displays only tickets allocated to you. Unassigned queue is hidden.",
+            MANAGER: "Executive Scope: Review service history, verify SLA compliance, and execute close-out."
+        };
+
+        function selectPersona(email, name, role) {
+            document.getElementById('loginEmail').value = email;
+            activeUser.email = email;
+            activeUser.name = name;
+            activeUser.role = role;
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            document.getElementById('authScreen').classList.add('hidden');
+            updateUIForRole();
+            fetchOrders();
+        }
+
+        function logout() {
+            document.getElementById('authScreen').classList.remove('hidden');
+        }
+
+        function updateUIForRole() {
+            document.getElementById('roleTag').innerText = activeUser.role;
+            document.getElementById('userDisplayName').innerText = activeUser.name;
+            document.getElementById('scopeDesc').innerText = SCOPE_INFO[activeUser.role];
+            document.getElementById('btnRaise').style.display = (activeUser.role === 'TECHNICIAN') ? 'none' : 'block';
+        }
 
         async function fetchOrders() {
-            const res = await fetch('/api/work-orders');
-            const data = await res.json();
-            renderBoard(data);
+            try {
+                const res = await fetch('/api/work-orders');
+                if (res.ok) {
+                    allOrders = await res.json();
+                    renderCards();
+                }
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function renderBoard(orders) {
-            const container = document.getElementById('boardColumns');
-            container.innerHTML = statusColumns.map(status => {
-                const filtered = orders.filter(o => o.status === status);
-                return `
-                    <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4 flex flex-col gap-3">
-                        <div class="flex justify-between items-center pb-2 border-b border-slate-700">
-                            <span class="font-bold text-xs uppercase tracking-wider text-slate-400">${status}</span>
-                            <span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full">${filtered.length}</span>
-                        </div>
-                        <div class="space-y-3">
-                            ${filtered.map(o => `
-                                <div class="bg-slate-800 border border-slate-600/60 p-3.5 rounded shadow-sm space-y-2">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-xs font-mono text-indigo-400 font-semibold">${o.code}</span>
-                                        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${o.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'}">${o.priority}</span>
-                                    </div>
-                                    <p class="text-sm font-medium">${o.title}</p>
-                                    <div class="pt-2 border-t border-slate-700/50 flex gap-2">
-                                        ${getNextAction(o)}
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function getNextAction(order) {
-            const transitions = {
-                'NEW': { next: 'ASSIGNED', label: 'Assign Job' },
-                'ASSIGNED': { next: 'IN_PROGRESS', label: 'Start Work' },
-                'IN_PROGRESS': { next: 'COMPLETED', label: 'Complete Job' }
-            };
-            const act = transitions[order.status];
-            if (!act) return `<span class="text-[11px] text-green-400 font-semibold">Done / Closed</span>`;
-            return `<button onclick="transition(${order.id}, '${act.next}')" class="w-full bg-slate-700 hover:bg-slate-600 text-indigo-300 text-xs py-1.5 rounded transition font-medium">${act.label} &rarr;</button>`;
-        }
-
-        async function transition(id, nextStatus) {
-            const role = document.getElementById('roleSelector').value;
-            await fetch(`/api/work-orders/${id}/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: nextStatus, user: role, note: `Moved to ${nextStatus}` })
+        function renderCards() {
+            ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'].forEach(s => {
+                document.getElementById(`col-${s}`).innerHTML = '';
             });
-            fetchOrders();
-        }
 
-        async function createOrder() {
-            const title = document.getElementById('woTitle').value;
-            const priority = document.getElementById('woPriority').value;
-            const role = document.getElementById('roleSelector').value;
-            if (!title) return alert('Enter title');
-            await fetch('/api/work-orders?user=' + encodeURIComponent(role), {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title, priority })
+            let filtered = allOrders.filter(o => {
+                if (activeUser.role === 'TECHNICIAN') return o.status !== 'NEW';
+                return true;
             });
-            closeModal();
-            document.getElementById('woTitle').value = '';
-            fetchOrders();
+
+            let counts = { NEW: 0, ASSIGNED: 0, IN_PROGRESS: 0, COMPLETED: 0 };
+
+            filtered.forEach(o => {
+                const mappedStatus = (o.status === 'CLOSED') ? 'COMPLETED' : o.status;
+                if (counts[mappedStatus] !== undefined) counts[mappedStatus]++;
+
+                // Matte black card on cement background
+                const card = document.createElement('div');
+                card.className = 'bg-[#18181b] border border-zinc-800 rounded-2xl p-4 shadow-md space-y-2.5 hover:border-zinc-700 transition';
+
+                const priorityBadges = {
+                    CRITICAL: 'bg-rose-950 text-rose-300 border-rose-800',
+                    HIGH: 'bg-amber-950 text-amber-300 border-amber-800',
+                    MEDIUM: 'bg-zinc-800 text-zinc-300 border-zinc-700',
+                    LOW: 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                };
+
+                let actionBtn = '';
+                if (activeUser.role === 'DISPATCHER' && o.status === 'NEW') {
+                    actionBtn = `<button onclick="updateStatus(${o.id}, 'ASSIGNED')" class="w-full mt-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-white font-semibold rounded-xl text-xs border border-zinc-700 transition">Assign to Field Tech &rarr;</button>`;
+                } else if (activeUser.role === 'TECHNICIAN' && o.status === 'ASSIGNED') {
+                    actionBtn = `<button onclick="updateStatus(${o.id}, 'IN_PROGRESS')" class="w-full mt-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 font-semibold rounded-xl text-xs border border-zinc-700 transition">Start Work &rarr;</button>`;
+                } else if (activeUser.role === 'TECHNICIAN' && o.status === 'IN_PROGRESS') {
+                    actionBtn = `<button onclick="openTechDrawer(${o.id}, '${o.code || 'WO-' + o.id}', '${o.title.replace(/'/g, "\\'")}')" class="w-full mt-2 py-1.5 bg-emerald-700 hover:bg-emerald-600 text-white font-semibold rounded-xl text-xs transition">Log Parts & Complete &rarr;</button>`;
+                } else if (activeUser.role === 'MANAGER' && o.status === 'COMPLETED') {
+                    actionBtn = `<button onclick="updateStatus(${o.id}, 'CLOSED')" class="w-full mt-2 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700 font-semibold rounded-xl text-xs transition">Sign Off & Close</button>`;
+                } else if (activeUser.role === 'CUSTOMER') {
+                    actionBtn = `<div class="mt-2 text-[10px] text-zinc-500 italic text-center font-mono">Governed Lifecycle Active</div>`;
+                }
+
+                card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-mono font-bold text-zinc-400">${o.code || 'WO-' + o.id}</span>
+            <span class="text-[9px] px-2 py-0.5 rounded-full border font-bold ${priorityBadges[o.priority] || priorityBadges.MEDIUM}">${o.priority}</span>
+          </div>
+          <p class="text-xs font-bold text-zinc-100 leading-snug">${o.title}</p>
+          <div class="text-[10px] text-zinc-400 flex items-center justify-between pt-1 border-t border-zinc-800/80 font-mono">
+            <span>Stage: <strong class="text-zinc-200">${o.status}</strong></span>
+          </div>
+          ${actionBtn}
+        `;
+
+                const target = document.getElementById(`col-${mappedStatus}`);
+                if (target) target.appendChild(card);
+            });
+
+            document.getElementById('badge-NEW').innerText = counts.NEW;
+            document.getElementById('badge-ASSIGNED').innerText = counts.ASSIGNED;
+            document.getElementById('badge-IN_PROGRESS').innerText = counts.IN_PROGRESS;
+            document.getElementById('badge-COMPLETED').innerText = counts.COMPLETED;
+
+            document.getElementById('statTotal').innerText = filtered.length;
+            document.getElementById('statPending').innerText = counts.NEW;
+            document.getElementById('statActive').innerText = counts.IN_PROGRESS;
+            document.getElementById('statClosed').innerText = counts.COMPLETED;
         }
 
-        function openModal() { document.getElementById('createModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('createModal').classList.add('hidden'); }
+        async function updateStatus(id, newStatus) {
+            try {
+                const res = await fetch(`/api/work-orders/${id}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus, note: `Status updated by ${activeUser.name}` })
+                });
+                if (res.ok) fetchOrders();
+            } catch (err) {
+                console.error(err);
+            }
+        }
 
+        async function submitNewOrder(e) {
+            e.preventDefault();
+            const title = document.getElementById('inputTitle').value;
+            const priority = document.getElementById('inputPriority').value;
+
+            try {
+                const res = await fetch('/api/work-orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, priority })
+                });
+                if (res.ok) {
+                    closeCreateModal();
+                    document.getElementById('inputTitle').value = '';
+                    fetchOrders();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openTechDrawer(id, code, title) {
+            selectedOrderId = id;
+            document.getElementById('drawerCode').innerText = code;
+            document.getElementById('drawerTitle').innerText = title;
+            document.getElementById('drawerTech').classList.remove('hidden');
+        }
+
+        function closeTechDrawer() { document.getElementById('drawerTech').classList.add('hidden'); }
+
+        function commitTechCompletion() {
+            if (!selectedOrderId) return;
+            closeTechDrawer();
+            updateStatus(selectedOrderId, 'COMPLETED');
+        }
+
+        function openCreateModal() { document.getElementById('modalCreate').classList.remove('hidden'); }
+        function closeCreateModal() { document.getElementById('modalCreate').classList.add('hidden'); }
+
+        updateUIForRole();
         fetchOrders();
     </script>
 </body>
