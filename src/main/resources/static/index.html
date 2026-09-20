@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KEYSTONE | Field Service Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
+    <header class="bg-slate-800 border-b border-slate-700 px-6 py-4 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-indigo-400 tracking-wide">KEYSTONE</h1>
+            <p class="text-xs text-slate-400">Meridian Facilities Management Platform</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <span class="text-sm text-slate-300">Acting As:</span>
+            <select id="roleSelector"
+                class="bg-slate-700 border border-slate-600 rounded px-3 py-1 text-sm font-semibold text-indigo-300">
+                <option value="Dispatcher">Dispatcher</option>
+                <option value="Technician">Technician</option>
+                <option value="Manager">Manager / Admin</option>
+                <option value="Customer">Customer</option>
+            </select>
+        </div>
+    </header>
+
+    <main class="p-6 max-w-7xl mx-auto space-y-6">
+        <div class="flex justify-between items-center">
+            <h2 class="text-xl font-semibold">Active Work Orders</h2>
+            <button onclick="openModal()"
+                class="bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded text-sm font-medium transition">
+                + Raise Work Order
+            </button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4" id="boardColumns"></div>
+    </main>
+
+    <div id="createModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full space-y-4">
+            <h3 class="text-lg font-bold">New Service Request</h3>
+            <input type="text" id="woTitle" placeholder="Issue Description (e.g. HVAC breakdown)"
+                class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+            <select id="woPriority" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM" selected>Medium</option>
+                <option value="HIGH">High</option>
+                <option value="CRITICAL">Critical</option>
+            </select>
+            <div class="flex justify-end gap-2">
+                <button onclick="closeModal()" class="px-3 py-1 text-sm text-slate-400">Cancel</button>
+                <button onclick="createOrder()"
+                    class="px-4 py-2 bg-indigo-600 rounded text-sm font-semibold">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const statusColumns = ['NEW', 'ASSIGNED', 'IN_PROGRESS', 'COMPLETED'];
+
+        async function fetchOrders() {
+            const res = await fetch('/api/work-orders');
+            const data = await res.json();
+            renderBoard(data);
+        }
+
+        function renderBoard(orders) {
+            const container = document.getElementById('boardColumns');
+            container.innerHTML = statusColumns.map(status => {
+                const filtered = orders.filter(o => o.status === status);
+                return `
+                    <div class="bg-slate-800/60 border border-slate-700 rounded-lg p-4 flex flex-col gap-3">
+                        <div class="flex justify-between items-center pb-2 border-b border-slate-700">
+                            <span class="font-bold text-xs uppercase tracking-wider text-slate-400">${status}</span>
+                            <span class="bg-slate-700 text-xs px-2 py-0.5 rounded-full">${filtered.length}</span>
+                        </div>
+                        <div class="space-y-3">
+                            ${filtered.map(o => `
+                                <div class="bg-slate-800 border border-slate-600/60 p-3.5 rounded shadow-sm space-y-2">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-xs font-mono text-indigo-400 font-semibold">${o.code}</span>
+                                        <span class="text-[10px] px-1.5 py-0.5 rounded font-bold ${o.priority === 'CRITICAL' ? 'bg-red-500/20 text-red-300' : 'bg-yellow-500/20 text-yellow-300'}">${o.priority}</span>
+                                    </div>
+                                    <p class="text-sm font-medium">${o.title}</p>
+                                    <div class="pt-2 border-t border-slate-700/50 flex gap-2">
+                                        ${getNextAction(o)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getNextAction(order) {
+            const transitions = {
+                'NEW': { next: 'ASSIGNED', label: 'Assign Job' },
+                'ASSIGNED': { next: 'IN_PROGRESS', label: 'Start Work' },
+                'IN_PROGRESS': { next: 'COMPLETED', label: 'Complete Job' }
+            };
+            const act = transitions[order.status];
+            if (!act) return `<span class="text-[11px] text-green-400 font-semibold">Done / Closed</span>`;
+            return `<button onclick="transition(${order.id}, '${act.next}')" class="w-full bg-slate-700 hover:bg-slate-600 text-indigo-300 text-xs py-1.5 rounded transition font-medium">${act.label} &rarr;</button>`;
+        }
+
+        async function transition(id, nextStatus) {
+            const role = document.getElementById('roleSelector').value;
+            await fetch(`/api/work-orders/${id}/status`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: nextStatus, user: role, note: `Moved to ${nextStatus}` })
+            });
+            fetchOrders();
+        }
+
+        async function createOrder() {
+            const title = document.getElementById('woTitle').value;
+            const priority = document.getElementById('woPriority').value;
+            const role = document.getElementById('roleSelector').value;
+            if (!title) return alert('Enter title');
+            await fetch('/api/work-orders?user=' + encodeURIComponent(role), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title, priority })
+            });
+            closeModal();
+            document.getElementById('woTitle').value = '';
+            fetchOrders();
+        }
+
+        function openModal() { document.getElementById('createModal').classList.remove('hidden'); }
+        function closeModal() { document.getElementById('createModal').classList.add('hidden'); }
+
+        fetchOrders();
+    </script>
+</body>
+
+</html>
